@@ -1,0 +1,8 @@
+.env
+main.py
+*.rar
+.venv/
+*.xlsx
+*.csv
+*.xml
+*.iml
