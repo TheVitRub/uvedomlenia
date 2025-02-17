@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import pandas as pd
+import shutil
 pd.set_option("expand_frame_repr", False)
 pd.set_option('display.max_colwidth', None)
 from sqlalchemy import create_engine
@@ -81,20 +82,56 @@ GROUP BY
         print(df_itog['Значение'].unique())
         # Убираем строки с пустыми значениями(этим мы не предложим скидочки)
         df_itog = df_itog.dropna(subset=['Значение'])
+        # Группируем данные по столбцу "Акции"
+        grouped = df_itog.groupby('Акции')
+
+        #Проверка и создание основной папки
+        output_folder = 'акции_данные'
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        # Проверяем, существует ли папка
+        if os.path.exists(output_folder):
+            # Удаляем всё содержимое папки
+            shutil.rmtree(output_folder)
+            # Создаем пустую папку с тем же именем
+            os.makedirs(output_folder)
+            print(f"Содержимое папки {output_folder} успешно удалено.")
+        else:
+            print(f"Папка {output_folder} не существует.")
+
+
+        # Создание папок
+        for i in range(60, 0, -3):  # Проверяем столбцы с 60 до 1 дня
+            # Если находятся совпадения, получаем имя столбца, с которым будем работать
+            name = f"{i} день"
+            if i == 3:
+                name2 = f"{1} день"
+                folder_path = os.path.join(output_folder, name2)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+            folder_path = os.path.join(output_folder, name)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+
+        # Сохраняем данные в отдельные файлы
+        for name, group in grouped:
+            # Создаем папку для каждой акции, если она еще не существует
+            folder_path = os.path.join(output_folder, name)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+            for i in range(1, 6):
+                file_path = os.path.join(folder_path, f'Аудитория {i}.xlsx')
+                df_itog1 = group[group['Аудитория'] == i]
+                df_itog1 = df_itog1['push_id']
+                df_itog1.to_excel(file_path, index=False)
+        print('Данные успешно обновлены')
+            #group.to_csv(file_path, index=False)
         # Делим на аудитории
-        df_itog1 = df_itog[df_itog['Аудитория'] == 1]
-        df_itog2 = df_itog[df_itog['Аудитория'] == 2]
-        df_itog3 = df_itog[df_itog['Аудитория'] == 3]
-        df_itog4 = df_itog[df_itog['Аудитория'] == 4]
-        df_itog5 = df_itog[df_itog['Аудитория'] == 5]
+
         # Здесь можно было бы убрать лишние столбцы(если надо)
 
         # Сохраняем данные
-        df_itog1.to_excel('Itog1.xlsx', index=False)
-        df_itog2.to_excel('Itog2.xlsx', index=False)
-        df_itog3.to_excel('Itog3.xlsx', index=False)
-        df_itog4.to_excel('Itog4.xlsx', index=False)
-        df_itog5.to_excel('Itog5.xlsx', index=False)
+
     def start_second_krug(self):
         """Функция для второго круга акций. 60-120 дней"""
         df = self.__take_data_for_DB_second(self.query_second_krug)
@@ -195,7 +232,7 @@ GROUP BY
         :df_aktsii: датасет с акциями"""
         # Создаём пустой столбец и по мере пополнения наполняем его
         df_data['Значение'] = None
-
+        df_data['Акции'] = None
         # Проходим по строкам в датасете Data
         for index, row in df_data.iterrows():
             days = row['Количество дней']
@@ -221,6 +258,7 @@ GROUP BY
                 if column_name != None:
                     value = df_aktsii.loc[df_aktsii['Аудитория'] == row['Аудитория'], column_name].values[0]
                     df_data.at[index, 'Значение'] = value
+                    df_data.at[index, 'Акции'] =  column_name
         return df_data
     def __take_aktzii_second(self, df_data, df_aktsii):
 
