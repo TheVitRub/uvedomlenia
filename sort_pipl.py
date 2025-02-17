@@ -13,7 +13,7 @@ class SortPipl:
         # Убрал в комментарий, т.к. было лень ждать загрузки с интернета
         self.path_sales = os.getenv('path_sales')
         # Если что-то сменится, то лучше удалить
-        #self.path_sales = 'Сводная ИМ.xlsx'
+        self.path_sales = 'Сводная ИМ.xlsx'
         self.host = os.getenv('HOST')
         self.port = os.getenv('PORT')
         self.database = os.getenv('DATABASE_NAME')
@@ -65,16 +65,20 @@ GROUP BY
         self.conn_to_db = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
     def start_first_krug(self):
         """Вызов функций для первого круга акций 1-60 дней"""
-
+        print('Работа с бд')
         # Беру данные с базы данных и немного их модифицирую
         df = self.__take_data_for_DB(self.query_first_krug)
+        print(df)
         # Получаем значения с таблицы
+        print("Работа с таблицей")
         df_aktzii = self.__take_table()
+        print(df_aktzii)
         # Соединяем датасет с пользователями со значениями из датасета с акциями
+        print('Соединение БД с таблицей')
         df_itog = self.__take_aktzii(df, df_aktzii)
 
-
-        #print(df_itog)
+        print("Сохранение")
+        print(df_itog['Значение'].unique())
         # Убираем строки с пустыми значениями(этим мы не предложим скидочки)
         df_itog = df_itog.dropna(subset=['Значение'])
         # Делим на аудитории
@@ -202,6 +206,8 @@ GROUP BY
                 # Если находятся совпадения, получаем имя столбца, с которым будем работать
                 if days == i:
                     column_name = f"{i} день"
+                elif days == 1:
+                    column_name = f"{1} день"
                 # Это если нам нужно дарить не по дням(3,6,9 и т.д.), а по периодам(с 3 по 6)
                 """elif (days < i and days > i - 3) or days == i:
                     column_name = f"{i} день"
