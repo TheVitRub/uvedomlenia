@@ -120,15 +120,20 @@ GROUP BY
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             for i in range(1, 6):
-                file_path = os.path.join(folder_path, f'Аудитория {i}.xlsx')
+                file_path = os.path.join(folder_path, f'Аудитория {i}.csv')
+                # Делим на аудитории
                 df_itog1 = group[group['Аудитория'] == i]
-                df_itog1 = df_itog1['push_id']
-                df_itog1.to_excel(file_path, index=False)
+                # Здесь можно было бы убрать лишние столбцы(если надо)
+                col = 'ID пользователя\t"Имя пользователя"\t"Дата проникновения в аудиторию"\t"Дата исчезновения из аудитории"\t"Номер телефона пользователя"\t"Номер карты пользователя"'
+
+                itog = pd.DataFrame(columns=[col])
+                itog[col] = df_itog1['push_id']
+                itog.to_csv(file_path, index=False)
         print('Данные успешно обновлены')
             #group.to_csv(file_path, index=False)
-        # Делим на аудитории
 
-        # Здесь можно было бы убрать лишние столбцы(если надо)
+
+
 
         # Сохраняем данные
 
