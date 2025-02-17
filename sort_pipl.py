@@ -22,23 +22,23 @@ class SortPipl:
         self.password = os.getenv('PASS')
         # Запрос для первого круга предложений
         self.query_first_krug = """SELECT 
-    spr_client.createdate,
-    spr_client.push_id
+    client_test.createdate,
+    client_test.push_id
 FROM 
-    spr_client
+    client_test
 LEFT JOIN 
-    spr_check ON spr_client.card_number = spr_check.card_number
+    spr_check ON client_test.card_number = spr_check.card_number
 WHERE 
-    spr_client.push_id NOT IN (
-        SELECT DISTINCT spr_client.push_id
-        FROM spr_client
-        JOIN spr_check ON spr_client.card_number = spr_check.card_number
+    client_test.push_id NOT IN (
+        SELECT DISTINCT client_test.push_id
+        FROM client_test
+        JOIN spr_check ON client_test.card_number = spr_check.card_number
         JOIN sales_im ON spr_check.id_check = sales_im.id_check
     )
-    AND spr_client.createdate > CURRENT_DATE - INTERVAL '61 days'
+    AND client_test.createdate > CURRENT_DATE - INTERVAL '61 days'
 GROUP BY 
-    spr_client.createdate, 
-    spr_client.push_id;
+    client_test.createdate, 
+    client_test.push_id;
 
 """
         # Запрос для второго круга уведомлений
@@ -123,12 +123,17 @@ GROUP BY
                 file_path = os.path.join(folder_path, f'Аудитория {i}.csv')
                 # Делим на аудитории
                 df_itog1 = group[group['Аудитория'] == i]
-                # Здесь можно было бы убрать лишние столбцы(если надо)
-                col = 'ID пользователя\t"Имя пользователя"\t"Дата проникновения в аудиторию"\t"Дата исчезновения из аудитории"\t"Номер телефона пользователя"\t"Номер карты пользователя"'
+                # Проверяем пустой ли он
+                if df_itog1.empty:
+                    pass
+                else:
+                    col = 'ID пользователя\t"Имя пользователя"\t"Дата проникновения в аудиторию"\t"Дата исчезновения из аудитории"\t"Номер телефона пользователя"\t"Номер карты пользователя"'
 
-                itog = pd.DataFrame(columns=[col])
-                itog[col] = df_itog1['push_id']
-                itog.to_csv(file_path, index=False)
+                    itog = pd.DataFrame(columns=[col])
+                    itog[col] = df_itog1['push_id']
+                    itog.to_csv(file_path, index=False)
+                # Здесь можно было бы убрать лишние столбцы(если надо)
+
         print('Данные успешно обновлены')
             #group.to_csv(file_path, index=False)
 
@@ -167,10 +172,10 @@ GROUP BY
         engine.dispose()
 
         # Преобразуем столбец createdate в формат datetime
-        df['createdate'] = pd.to_datetime(df['createdate'])
+        df['createdate'] = pd.to_datetime(df['createdate']).dt.normalize()
 
         # Получаем сегодняшнюю дату как pandas datetime
-        today = pd.to_datetime(datetime.today().date())
+        today = pd.Timestamp.today().normalize()
 
         # Вычисляем разницу в днях и добавляем в новый столбец 'days_difference'
         df['Количество дней'] = (today - df['createdate']).dt.days
